@@ -164,8 +164,6 @@ func (d *decoder) Decode() (publisher.Event, error) {
 	)
 
 	d.unfolder.SetTarget(&to)
-	defer d.unfolder.Reset()
-
 	switch codec {
 	case codecJSON:
 		err = d.json.Parse(contents)

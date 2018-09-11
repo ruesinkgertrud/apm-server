@@ -81,10 +81,7 @@ func writeGeneratedFieldsYml(beatPath string, fieldFiles []*YmlFile, output stri
 
 	if output == "-" {
 		fw := bufio.NewWriter(os.Stdout)
-		_, err = fw.Write(data)
-		if err != nil {
-			return err
-		}
+		fw.Write(data)
 		return fw.Flush()
 	}
 
@@ -96,10 +93,7 @@ func writeGeneratedFieldsYml(beatPath string, fieldFiles []*YmlFile, output stri
 	defer f.Close()
 
 	fw := bufio.NewWriter(f)
-	_, err = fw.Write(data)
-	if err != nil {
-		return err
-	}
+	fw.Write(data)
 	return fw.Flush()
 }
 

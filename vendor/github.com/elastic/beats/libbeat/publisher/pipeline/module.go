@@ -38,14 +38,6 @@ var publishDisabled = false
 
 const defaultQueueType = "mem"
 
-// Monitors configures visibility for observing state and progress of the
-// pipeline.
-type Monitors struct {
-	Metrics   *monitoring.Registry
-	Telemetry *monitoring.Registry
-	Logger    *logp.Logger
-}
-
 func init() {
 	flag.BoolVar(&publishDisabled, "N", false, "Disable actual publishing for testing")
 }
@@ -54,17 +46,12 @@ func init() {
 // configured queue and outputs.
 func Load(
 	beatInfo beat.Info,
-	monitors Monitors,
+	reg *monitoring.Registry,
 	config Config,
 	outcfg common.ConfigNamespace,
 ) (*Pipeline, error) {
-	log := monitors.Logger
-	if log == nil {
-		log = logp.L()
-	}
-
 	if publishDisabled {
-		log.Info("Dry run mode. All output types except the file based one are disabled.")
+		logp.Info("Dry run mode. All output types except the file based one are disabled.")
 	}
 
 	processors, err := processors.New(config.Processors)
@@ -93,54 +80,49 @@ func Load(
 		},
 	}
 
-	queueBuilder, err := createQueueBuilder(config.Queue, monitors)
+	queueBuilder, err := createQueueBuilder(config.Queue)
 	if err != nil {
 		return nil, err
 	}
 
-	out, err := loadOutput(beatInfo, monitors, outcfg)
+	out, err := loadOutput(beatInfo, reg, outcfg)
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := New(beatInfo, monitors.Metrics, queueBuilder, out, settings)
+	p, err := New(beatInfo, reg, queueBuilder, out, settings)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Beat name: %s", name)
+	logp.Info("Beat name: %s", name)
 	return p, err
 }
 
 func loadOutput(
 	beatInfo beat.Info,
-	monitors Monitors,
+	reg *monitoring.Registry,
 	outcfg common.ConfigNamespace,
 ) (outputs.Group, error) {
-	log := monitors.Logger
-	if log == nil {
-		log = logp.L()
-	}
-
 	if publishDisabled {
 		return outputs.Group{}, nil
 	}
 
 	if !outcfg.IsSet() {
 		msg := "No outputs are defined. Please define one under the output section."
-		log.Info(msg)
+		logp.Info(msg)
 		return outputs.Fail(errors.New(msg))
 	}
 
 	// TODO: add support to unload/reassign outStats on output reloading
 
 	var (
-		metrics  *monitoring.Registry
+		outReg   *monitoring.Registry
 		outStats outputs.Observer
 	)
-	if monitors.Metrics != nil {
-		metrics = monitors.Metrics.NewRegistry("output")
-		outStats = outputs.NewStats(metrics)
+	if reg != nil {
+		outReg = reg.NewRegistry("output")
+		outStats = outputs.NewStats(outReg)
 	}
 
 	out, err := outputs.Load(beatInfo, outStats, outcfg.Name(), outcfg.Config())
@@ -148,21 +130,18 @@ func loadOutput(
 		return outputs.Fail(err)
 	}
 
-	if metrics != nil {
-		monitoring.NewString(metrics, "type").Set(outcfg.Name())
+	if outReg != nil {
+		monitoring.NewString(outReg, "type").Set(outcfg.Name())
 	}
-	if monitors.Telemetry != nil {
-		telemetry := monitors.Telemetry.NewRegistry("output")
-		monitoring.NewString(telemetry, "name").Set(outcfg.Name())
-	}
+
+	stateRegistry := monitoring.GetNamespace("state").GetRegistry()
+	outputRegistry := stateRegistry.NewRegistry("output")
+	monitoring.NewString(outputRegistry, "name").Set(outcfg.Name())
 
 	return out, nil
 }
 
-func createQueueBuilder(
-	config common.ConfigNamespace,
-	monitors Monitors,
-) (func(queue.Eventer) (queue.Queue, error), error) {
+func createQueueBuilder(config common.ConfigNamespace) (func(queue.Eventer) (queue.Queue, error), error) {
 	queueType := defaultQueueType
 	if b := config.Name(); b != "" {
 		queueType = b
@@ -178,12 +157,7 @@ func createQueueBuilder(
 		queueConfig = common.NewConfig()
 	}
 
-	if monitors.Telemetry != nil {
-		queueReg := monitors.Telemetry.NewRegistry("queue")
-		monitoring.NewString(queueReg, "name").Set(queueType)
-	}
-
 	return func(eventer queue.Eventer) (queue.Queue, error) {
-		return queueFactory(eventer, monitors.Logger, queueConfig)
+		return queueFactory(eventer, queueConfig)
 	}, nil
 }

@@ -43,8 +43,7 @@ import (
 )
 
 type reporter struct {
-	done   *stopper
-	logger *logp.Logger
+	done *stopper
 
 	checkRetry time.Duration
 
@@ -59,9 +58,7 @@ type reporter struct {
 	out []outputs.NetworkClient
 }
 
-const selector = "monitoring"
-
-var debugf = logp.MakeDebug(selector)
+var debugf = logp.MakeDebug("monitoring")
 
 var errNoMonitoring = errors.New("xpack monitoring not available")
 
@@ -75,40 +72,8 @@ func init() {
 	report.RegisterReporterFactory("elasticsearch", makeReporter)
 }
 
-func defaultConfig(settings report.Settings) config {
-	c := config{
-		Hosts:            nil,
-		Protocol:         "http",
-		Params:           nil,
-		Headers:          nil,
-		Username:         "beats_system",
-		Password:         "",
-		ProxyURL:         "",
-		CompressionLevel: 0,
-		TLS:              nil,
-		MaxRetries:       3,
-		Timeout:          60 * time.Second,
-		MetricsPeriod:    10 * time.Second,
-		StatePeriod:      1 * time.Minute,
-		BulkMaxSize:      50,
-		BufferSize:       50,
-		Tags:             nil,
-		Backoff: backoff{
-			Init: 1 * time.Second,
-			Max:  60 * time.Second,
-		},
-	}
-
-	if settings.DefaultUsername != "" {
-		c.Username = settings.DefaultUsername
-	}
-
-	return c
-}
-
-func makeReporter(beat beat.Info, settings report.Settings, cfg *common.Config) (report.Reporter, error) {
-	log := logp.L().Named(selector)
-	config := defaultConfig(settings)
+func makeReporter(beat beat.Info, cfg *common.Config) (report.Reporter, error) {
+	config := defaultConfig
 	if err := cfg.Unpack(&config); err != nil {
 		return nil, err
 	}
@@ -125,7 +90,7 @@ func makeReporter(beat beat.Info, settings report.Settings, cfg *common.Config) 
 		return nil, err
 	}
 	if proxyURL != nil {
-		log.Infof("Using proxy URL: %s", proxyURL)
+		logp.Info("Using proxy URL: %s", proxyURL)
 	}
 	tlsConfig, err := tlscommon.LoadTLSConfig(config.TLS)
 	if err != nil {
@@ -158,11 +123,10 @@ func makeReporter(beat beat.Info, settings report.Settings, cfg *common.Config) 
 	}
 
 	queueFactory := func(e queue.Eventer) (queue.Queue, error) {
-		return memqueue.NewBroker(log,
-			memqueue.Settings{
-				Eventer: e,
-				Events:  20,
-			}), nil
+		return memqueue.NewBroker(memqueue.Settings{
+			Eventer: e,
+			Events:  20,
+		}), nil
 	}
 
 	monitoring := monitoring.Default.GetRegistry("xpack.monitoring")
@@ -194,7 +158,6 @@ func makeReporter(beat beat.Info, settings report.Settings, cfg *common.Config) 
 	}
 
 	r := &reporter{
-		logger:     log,
 		done:       newStopper(),
 		beatMeta:   makeMeta(beat),
 		tags:       config.Tags,
@@ -217,8 +180,6 @@ func (r *reporter) initLoop(c config) {
 	debugf("Start monitoring endpoint init loop.")
 	defer debugf("Finish monitoring endpoint init loop.")
 
-	log := r.logger
-
 	logged := false
 
 	for {
@@ -226,11 +187,11 @@ func (r *reporter) initLoop(c config) {
 		client := r.out[rand.Intn(len(r.out))]
 		err := client.Connect()
 		if err == nil {
-			closing(log, client)
+			closing(client)
 			break
 		} else {
 			if !logged {
-				log.Info("Failed to connect to Elastic X-Pack Monitoring. Either Elasticsearch X-Pack monitoring is not enabled or Elasticsearch is not available. Will keep retrying.")
+				logp.Info("Failed to connect to Elastic X-Pack Monitoring. Either Elasticsearch X-Pack monitoring is not enabled or Elasticsearch is not available. Will keep retrying.")
 				logged = true
 			}
 			debugf("Monitoring could not connect to elasticsearch, failed with %v", err)
@@ -243,7 +204,7 @@ func (r *reporter) initLoop(c config) {
 		}
 	}
 
-	log.Info("Successfully connected to X-Pack Monitoring endpoint.")
+	logp.Info("Successfully connected to X-Pack Monitoring endpoint.")
 
 	// Start collector and send loop if monitoring endpoint has been found.
 	go r.snapshotLoop("state", "state", c.StatePeriod)
@@ -255,10 +216,8 @@ func (r *reporter) snapshotLoop(namespace, prefix string, period time.Duration) 
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
-	log := r.logger
-
-	log.Infof("Start monitoring %s metrics snapshot loop with period %s.", namespace, period)
-	defer log.Infof("Stop monitoring %s metrics snapshot loop.", namespace)
+	logp.Info("Start monitoring %s metrics snapshot loop with period %s.", namespace, period)
+	defer logp.Info("Stop monitoring %s metrics snapshot loop.", namespace)
 
 	for {
 		var ts time.Time
@@ -327,9 +286,9 @@ func makeClient(
 	return newPublishClient(esClient, params), nil
 }
 
-func closing(log *logp.Logger, c io.Closer) {
+func closing(c io.Closer) {
 	if err := c.Close(); err != nil {
-		log.Warnf("Closed failed with: %v", err)
+		logp.Warn("Closed failed with: %v", err)
 	}
 }
 

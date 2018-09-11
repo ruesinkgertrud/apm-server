@@ -291,8 +291,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------------------------------
 Dependency: github.com/elastic/beats
-Version: master
-Revision: 9828935bb1896ea620a77a328a351fd6e828112f
+Version: 6.x
+Revision: 8f170ac2dabbb528d437354db7c52b8fcacd1bab
 License type (autodetected): Apache-2.0
 ./vendor/github.com/elastic/beats/LICENSE.txt:
 --------------------------------------------------------------------
@@ -325,7 +325,7 @@ Elasticsearch, B.V. (https://www.elastic.co/).
 
 --------------------------------------------------------------------
 Dependency: github.com/elastic/go-structform
-Revision: 1425975cf4eb470099fcf02cbe9389cf3a7028a3
+Revision: 0a66add879601f69f55663f4c913c72988218982
 License type (autodetected): Apache-2.0
 ./vendor/github.com/elastic/go-structform/LICENSE:
 --------------------------------------------------------------------
@@ -1026,7 +1026,7 @@ THE SOFTWARE.
 
 --------------------------------------------------------------------
 Dependency: github.com/jstemmer/go-junit-report
-Revision: 385fac0ced9acaae6dc5b39144194008ded00697
+Revision: 9828935bb1896ea620a77a328a351fd6e828112f
 License type (autodetected): MIT
 ./vendor/github.com/jstemmer/go-junit-report/LICENSE:
 --------------------------------------------------------------------

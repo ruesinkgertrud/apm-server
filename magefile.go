@@ -20,7 +20,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -84,7 +83,7 @@ func Package() {
 	start := time.Now()
 	defer func() { fmt.Println("package ran for", time.Since(start)) }()
 
-	mage.UseElasticBeatWithoutXPackPackaging()
+	mage.UseElasticBeatPackaging()
 	customizePackaging()
 
 	mg.Deps(Update, prepareIngestPackaging)
@@ -104,18 +103,6 @@ func Update() error {
 
 func Fields() error {
 	return mage.GenerateFieldsYAML("model")
-}
-
-// Use RACE_DETECTOR=true to enable the race detector.
-func GoTestUnit(ctx context.Context) error {
-	return mage.GoTest(ctx, mage.DefaultGoTestUnitArgs())
-}
-
-// GoTestIntegration executes the Go integration tests.
-// Use TEST_COVERAGE=true to enable code coverage profiling.
-// Use RACE_DETECTOR=true to enable the race detector.
-func GoTestIntegration(ctx context.Context) error {
-	return mage.GoTest(ctx, mage.DefaultGoTestIntegrationArgs())
 }
 
 // -----------------------------------------------------------------------------

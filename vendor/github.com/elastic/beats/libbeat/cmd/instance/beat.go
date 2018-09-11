@@ -73,7 +73,6 @@ import (
 	_ "github.com/elastic/beats/libbeat/processors/add_kubernetes_metadata"
 	_ "github.com/elastic/beats/libbeat/processors/add_locale"
 	_ "github.com/elastic/beats/libbeat/processors/dissect"
-	_ "github.com/elastic/beats/libbeat/processors/dns"
 
 	// Register autodiscover providers
 	_ "github.com/elastic/beats/libbeat/autodiscover/providers/docker"
@@ -155,11 +154,7 @@ func initRand() {
 // implementation. bt is the `Creator` callback for creating a new beater
 // instance.
 // XXX Move this as a *Beat method?
-func Run(settings Settings, bt beat.Creator) error {
-	name := settings.Name
-	idxPrefix := settings.IndexPrefix
-	version := settings.Version
-
+func Run(name, idxPrefix, version string, bt beat.Creator) error {
 	return handleError(func() error {
 		defer func() {
 			if r := recover(); r != nil {
@@ -190,7 +185,7 @@ func Run(settings Settings, bt beat.Creator) error {
 		monitoring.NewString(beatRegistry, "name").Set(b.Info.Name)
 		monitoring.NewFunc(stateRegistry, "host", host.ReportInfo, monitoring.Report)
 
-		return b.launch(settings, bt)
+		return b.launch(bt)
 	}())
 }
 
@@ -293,14 +288,7 @@ func (b *Beat) createBeater(bt beat.Creator) (beat.Beater, error) {
 	}
 
 	debugf("Initializing output plugins")
-	pipeline, err := pipeline.Load(b.Info,
-		pipeline.Monitors{
-			Metrics:   reg,
-			Telemetry: monitoring.GetNamespace("state").GetRegistry(),
-			Logger:    logp.L().Named("publisher"),
-		},
-		b.Config.Pipeline,
-		b.Config.Output)
+	pipeline, err := pipeline.Load(b.Info, reg, b.Config.Pipeline, b.Config.Output)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing publisher: %+v", err)
 	}
@@ -318,7 +306,7 @@ func (b *Beat) createBeater(bt beat.Creator) (beat.Beater, error) {
 	return beater, nil
 }
 
-func (b *Beat) launch(settings Settings, bt beat.Creator) error {
+func (b *Beat) launch(bt beat.Creator) error {
 	defer logp.Sync()
 	defer logp.Info("%s stopped.", b.Info.Beat)
 
@@ -340,10 +328,7 @@ func (b *Beat) launch(settings Settings, bt beat.Creator) error {
 	}
 
 	if b.Config.Monitoring.Enabled() {
-		settings := report.Settings{
-			DefaultUsername: settings.Monitoring.DefaultUsername,
-		}
-		reporter, err := report.New(b.Info, settings, b.Config.Monitoring, b.Config.Output)
+		reporter, err := report.New(b.Info, b.Config.Monitoring, b.Config.Output)
 		if err != nil {
 			return err
 		}

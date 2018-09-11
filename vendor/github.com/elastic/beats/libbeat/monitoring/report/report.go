@@ -30,15 +30,11 @@ type config struct {
 	Reporter common.ConfigNamespace `config:",inline"`
 }
 
-type Settings struct {
-	DefaultUsername string
-}
-
 type Reporter interface {
 	Stop()
 }
 
-type ReporterFactory func(beat.Info, Settings, *common.Config) (Reporter, error)
+type ReporterFactory func(beat.Info, *common.Config) (Reporter, error)
 
 var (
 	defaultConfig = config{}
@@ -55,7 +51,6 @@ func RegisterReporterFactory(name string, f ReporterFactory) {
 
 func New(
 	beat beat.Info,
-	settings Settings,
 	cfg *common.Config,
 	outputs common.ConfigNamespace,
 ) (Reporter, error) {
@@ -69,7 +64,7 @@ func New(
 		return nil, fmt.Errorf("unknown reporter type '%v'", name)
 	}
 
-	return f(beat, settings, cfg)
+	return f(beat, cfg)
 }
 
 func getReporterConfig(
