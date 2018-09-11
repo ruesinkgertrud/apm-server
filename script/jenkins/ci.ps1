@@ -43,6 +43,8 @@ New-Item -ItemType directory -Path build\coverage | Out-Null
 New-Item -ItemType directory -Path build\system-tests | Out-Null
 New-Item -ItemType directory -Path build\system-tests\run | Out-Null
 
+exec { go get -u github.com/jstemmer/go-junit-report }
+
 echo "Building fields.yml"
 exec { mage fields }
 
