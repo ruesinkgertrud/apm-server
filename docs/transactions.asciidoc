@@ -1,8 +1,8 @@
 [[transactions]]
 == Transactions
 
-A transaction describes an event captured by an Elastic APM agent instrumeting a service.
-A transaction can for example be an HTTP request or an asynchrounous background job.
+A transaction describes an event captured by an Elastic APM agent instrumenting a service.
+A transaction can for example be an HTTP request or an asynchronous background job.
 
 It contains the timestamp and duration of the event,
 a unique id, type, name,
@@ -15,7 +15,7 @@ include::./context.asciidoc[]
 
 Agents decide whether to sample transactions or not, and provide settings to control sampling behaviour.
 If sampled,
-the <<transaction-spans,spans>> of a transaction are sent and stored seperate documents.
+the <<transaction-spans,spans>> of a transaction are sent and stored separate documents.
 
 Transactions are stored in <<transaction-indices, transaction indices>>.
 

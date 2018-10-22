@@ -3,8 +3,8 @@
 
 Errors are identified by a unique ID.
 An error event contains at least
-information about the original `exception` that occured
-or about a `log` created when the exception occured.
+information about the original `exception` that occurred
+or about a `log` created when the exception occurred.
 
 Both the captured `exception` and the captured `log` of an error can contain a `stack trace`,
 helpful for debugging.
