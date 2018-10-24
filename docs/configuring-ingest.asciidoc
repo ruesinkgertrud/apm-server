@@ -4,7 +4,7 @@
 [[configuring-ingest-node]]
 == Parse data using ingest node pipelines
 
-With the Elasticsearch output you can configure the APM Server to use
+With the Elasticsearch output, you can configure the APM Server to use
 {elasticsearch}/ingest.html[ingest node] to pre-process documents before indexing them.
 A pipeline defines processors that operate on your data.
 For example, you can register a pipeline that defines one processor that removes a field and another that renames other field.

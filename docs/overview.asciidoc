@@ -26,8 +26,7 @@ The APM Server is a separate component for the following reasons:
 * It helps to keep the agents as light as possible and since the APM Server is a stateless separate component,
 it can be scaled independently.
 * For Real User monitoring data is collected in browsers.
-  APM Server prevents browsers from interacting directly with Elasticsearch (which poses a security risk),
-  and controls the amount of data flowing into Elasticsearch.
+  APM Server prevents browsers from interacting directly with Elasticsearch (which poses a security risk) and controls the amount of data flowing into Elasticsearch.
 * In cases where Elasticsearch becomes unresponsive,
 APM Server can buffer data temporarily without adding overhead to the agents.
 * Acts as a middleware for source mapping for javascript in the browser.

@@ -1,7 +1,7 @@
 [[upgrading]]
 == Upgrading APM Server
 
-We do our best to keep APM Server backwards compatible between minor releases.
+We do our best to keep APM Server backward compatible between minor releases.
 However, check out the <<breaking-changes, breaking changes>> section for exceptions.
 
 Before upgrading:
@@ -31,7 +31,7 @@ and applies the correct template automatically.
 [[breaking-changes]]
 === Breaking Changes
 APM Server is built on top of {beats-ref}/index.html[libbeat].
-As such any breaking change in libbeat is also considered to be a breaking change in APM Server.
+As such, any breaking change in libbeat is also considered to be a breaking change in APM Server.
 
 [float]
 ==== HEAD 

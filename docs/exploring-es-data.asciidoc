@@ -39,7 +39,7 @@ GET apm-*transactions-*/_search
 // CONSOLE
 
 If you are interested in the _settings_ and _mappings_ of the Elastic APM indices,
-first run a query to find template names:
+first, run a query to find template names:
 
 ["source","sh"]
 ------------------------------------------------------------
