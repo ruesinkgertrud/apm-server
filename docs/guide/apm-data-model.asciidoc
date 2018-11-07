@@ -1,0 +1,102 @@
+[[apm-data-model]]
+== Data Model
+
+Elastic APM agents capture different types of information from within their instrumented applications - namely `transactions`, `spans`, and `errors`. 
+
+* <<transactions,Transaction>>
+* <<transaction-spans,Spans>>
+* <<errors,Errors>>
+
+[[transactions]]
+=== Transactions
+
+A transaction describes an event captured by an Elastic APM agent instrumenting a service. Some examples of a transaction might be:
+
+* An HTTP request
+* An asynchronous background job
+
+A transaction contains:
+
+* The timestamp and duration of the event
+* A unique id, type, and name
+* A result (e.g. a response code)
+* Some contextual data (see below for details)
+* Other relevant information depending on the agent. Example: The JavaScript RUM captures transaction marks,
+which are points in time relative to the start of the transaction with some label.
+
+[[transactions-context]]
+include::../context.asciidoc[]
+
+Agents decide whether to sample transactions or not,
+and provide settings to control sampling behavior.
+
+Transactions are stored in {apm-server-ref}/transaction-indices[transaction indices].
+
+[[transaction-spans]]
+=== Spans
+Transactions can have 0, 1, or many spans. Spans have a `transaction.id` attribute that refer to their parent transaction.
+
+Agents typically automatically instrument a variety of of libraries,
+but also provide an API for ad hoc instrumentation of specific code paths. 
+A span contains information about a specific code path that has been executed as part of a transaction.
+This information includes:
+
+* start time
+* duration
+* name
+* type
+* `stack trace` (optional).
+
+As an example, if a database query happens within a sampled transaction,
+a span describing the database query will be created.
+The name of this span will contain information about the query itself,
+and the type of this span will contain information about the database type.
+
+Spans are stored in {apm-server-ref}/span-indices[span indices].
+Note that these indices are separate from {apm-server-ref}/transaction-indices[transaction indices] by default.
+
+[float]
+[[dropped-spans]]
+==== Dropped Spans
+
+For performance reasons, APM agents can choose to purposefully sample or omit spans.
+One example of this might be for long running transactions with over 100 spans.
+These edge cases can overload both the agent and the APM Server.
+To avoid this, Agents can drop spans. When they do this,
+they notify the server of exactly how many spans were dropped,
+this note is then passed on to the user in the UI.
+
+Settings affecting dropped spans, and more details on why they might occur,
+are available in the relevant {apm-agents-ref}/index.html[APM Agent] documentation.
+
+[float]
+[[missing-spans]]
+==== Missing Spans
+
+Similarly to dropped spans, transactions may have missing spans.
+This can happen because spans are streamed from the APM Agent to the APM Server separately from their transaction.
+Unforseen errors may cause spans to go missing.
+Because the agent notifies the server about how many spans their should be,
+we're able to easily determine if a span has gone missing. 
+
+[[errors]]
+=== Errors
+
+Errors are identified by a unique ID.
+An error event contains at least
+information about the original `exception` that occurred
+or about a `log` created when the exception occurred.
+
+Both the captured `exception` and the captured `log` of an error can contain a `stack trace`,
+helpful for debugging.
+
+The `culprit` of an error indicates where it originated.
+
+An error might relate to the <<transactions,transaction>> during which it happened,
+via the `transaction.id`.
+
+Errors also have some contextual data.
+
+include::../context.asciidoc[]
+
+Errors are stored in {apm-server-ref}/error-indices[error indices].
