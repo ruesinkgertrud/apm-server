@@ -53,7 +53,7 @@ include::./setting-up-and-running.asciidoc[]
 :beat-specific-output-config: ./../configuring-output-after.asciidoc
 include::./configuring.asciidoc[]
 
-:beat-specific-security: ../security.asciidoc
+:apm-specific-security: ../security.asciidoc
 include::./copied-from-beats/shared-securing-beat.asciidoc[]
 
 include::./copied-from-beats/monitoring/monitoring-beats.asciidoc[]
