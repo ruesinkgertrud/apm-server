@@ -360,7 +360,146 @@ as there is no way to prevent them from being publicly exposed.
 
 **Agent specific configuration**
 
-Each Agent has a configuration for setting the value of the secret token:
+Configure your agents to use the secret token:
+
+++++
+<div class="tabs">
+  <div role="tablist" aria-label="Sample Tabs">
+    <button class="button-style" role="tab" aria-selected="true" aria-controls="panel-1" id="tab-1" tabindex="0">
+      Java
+    </button>
+    <button class="button-style" role="tab" aria-selected="false" aria-controls="panel-2" id="tab-2" tabindex="-1">
+      Ruby
+    </button>
+    <button class="button-style" role="tab" aria-selected="false" aria-controls="panel-3" id="tab-3" tabindex="-1">
+      Go
+    </button>
+    <button class="button-style" role="tab" aria-selected="false" aria-controls="panel-4" id="tab-4" tabindex="-1">
+      Python
+    </button>
+    <button class="button-style" role="tab" aria-selected="false" aria-controls="panel-5" id="tab-5" tabindex="-1">
+      Node.js
+    </button>
+  </div>
+  <div class="content" id="panel-1" role="tabpanel" tabindex="0" aria-labelledby="tab-1">
+++++
+
+include::./test-asciidoc/java1.asciidoc[]
+
+++++
+  <hr>
+  </div>
+  <div class="content" id="panel-2" role="tabpanel" tabindex="0" aria-labelledby="tab-2" hidden>
+++++
+
+include::./test-asciidoc/ruby1.asciidoc[]
+
+++++
+  <hr>
+  </div>
+  <div class="content" id="panel-3" role="tabpanel" tabindex="0" aria-labelledby="tab-3" hidden>
+++++
+
+include::./test-asciidoc/go1.asciidoc[]
+
+++++
+      <hr>
+  </div>
+</div>
+
+
+<style>
+.button-style
+{
+	padding: 10px 40px;
+  margin: 0px 0px 0px 0px;
+  float: left;
+
+  text-decoration: none;
+  font-family: Inter, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #000; /* text color */
+	background-color: #fff;
+  border: 1px solid #0077cc;
+}
+
+.button-style[aria-selected="true"]{
+  color: #FFF; /* text color */
+	background-color: #0077cc;
+  border: 1px solid #0077cc;
+}
+
+.content{
+  clear:both
+}
+</style>
+
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  const tabs = document.querySelectorAll('[role="tab"]');
+  const tabList = document.querySelector('[role="tablist"]');
+
+  // Add a click event handler to each tab
+  tabs.forEach(tab => {
+    tab.addEventListener("click", changeTabs);
+  });
+
+  // Enable arrow navigation between tabs in the tab list
+  let tabFocus = 0;
+
+  tabList.addEventListener("keydown", e => {
+    // Move right
+    if (e.keyCode === 39 || e.keyCode === 37) {
+      tabs[tabFocus].setAttribute("tabindex", -1);
+      if (e.keyCode === 39) {
+        tabFocus++;
+        // If we're at the end, go to the start
+        if (tabFocus >= tabs.length) {
+          tabFocus = 0;
+        }
+        // Move left
+      } else if (e.keyCode === 37) {
+        tabFocus--;
+        // If we're at the start, move to the end
+        if (tabFocus < 0) {
+          tabFocus = tabs.length - 1;
+        }
+      }
+
+      tabs[tabFocus].setAttribute("tabindex", 0);
+      tabs[tabFocus].focus();
+    }
+  });
+});
+
+function changeTabs(e) {
+  const target = e.target;
+  const parent = target.parentNode;
+  const grandparent = parent.parentNode;
+
+  // Remove all current selected tabs
+  parent
+    .querySelectorAll('[aria-selected="true"]')
+    .forEach(t => t.setAttribute("aria-selected", false));
+
+  // Set this tab as selected
+  target.setAttribute("aria-selected", true);
+
+  // Hide all tab panels
+  grandparent
+    .querySelectorAll('[role="tabpanel"]')
+    .forEach(p => p.setAttribute("hidden", true));
+
+  // Show the selected panel
+  grandparent.parentNode
+    .querySelector(`#${target.getAttribute("aria-controls")}`)
+    .removeAttribute("hidden");
+}
+</script>
+
+++++
+
 
 * *Go Agent*: {apm-go-ref}/configuration.html#config-secret-token[`ELASTIC_APM_SECRET_TOKEN`]
 * *Java Agent*: {apm-java-ref}/config-reporter.html#config-secret-token[`secret_token`]

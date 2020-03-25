@@ -1,0 +1,7 @@
+[options="header"]
+|============
+| Java System Properties      | Property file   | Environment
+| `elastic.apm.secret_token` | `secret_token` | `ELASTIC_APM_SECRET_TOKEN`
+|============
+
+Learn more in the Java {apm-java-ref}/config-reporter.html#config-secret-token[configuration reference].

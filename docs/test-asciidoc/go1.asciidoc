@@ -1,0 +1,7 @@
+[options="header"]
+|============
+| Environment                | `Config` key    | Default | Example
+| `GoGoGo` | `secret_token`  | `GoGo`   | Goooooo
+|============
+
+Learn more in the Go {apm-go-ref}/configuration.html#config-secret-token[configuration reference].

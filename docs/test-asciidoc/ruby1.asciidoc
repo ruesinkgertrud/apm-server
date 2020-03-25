@@ -1,0 +1,7 @@
+[options="header"]
+|============
+| Environment                | `Config` key    | Default | Example
+| `ELASTIC_APM_SECRET_TOKEN` | `secret_token`  | `nil`   | A random string
+|============
+
+Learn more in the Ruby {apm-ruby-ref}/configuration.html#config-secret-token[configuration reference].
