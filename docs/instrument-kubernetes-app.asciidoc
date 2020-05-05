@@ -1,0 +1,229 @@
+[[apm-kubernetes]]
+== How to instrument an app running in Kubernetes
+
+++++
+<titleabbrev>Instrument an app running in Kubernetes</titleabbrev>
+++++
+
+When instrumenting an app running in Kubernetes,
+https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes Secrets] can be exposed as environment variables and used to configure your Elastic APM agents.
+
+Below, we'll look at a simple Node.js example.
+If you're using a different Agent, just make sure to use the correct environment variables for your Agent.
+
+This guide is divided into four parts:
+
+* Instrument a sample application (skip this step if you already have an app to monitor)
+* Get Elastic Stack deployment details
+* Configure Kubernetes
+* Deploy the application (skip this step if you already have an app to monitor)
+
+[float]
+=== A simple Express.js app
+
+If you need an application to monitor, consider this basic Express.js application.
+It returns "Hello World" when viewed at `http://localhost:3000`.
+
+[source,js]
+----
+const express = require('express')
+const app = express()
+const port = 8080
+
+app.get('/', (req, res) => res.send('Hello World!'))
+
+app.listen(port, () => console.log(`Example app listening at http://localhost:${port}`))
+----
+
+To use Elastic APM, add the Node.js APM Agent as a dependency to the application:
+
+[source,js]
+----
+npm install elastic-apm-node --save
+----
+
+Then, add one line of code, to the very top to the original application, to initialize the Agent:
+
+[source,js]
+----
+const apm = require('elastic-apm-node').start();
+----
+
+Now that our application has been instrumented,
+we can containerize it with a basic `Dockerfile`.
+
+[source,docker]
+----
+FROM node:12
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+EXPOSE 8080
+CMD [ "node", "server.js" ]
+----
+
+You can build and test the image locally with:
+
+[source,console]
+----
+docker build -t <your_username>/apm-test-app .
+docker run -p 8080:8080 -d <your_username>/node-web-app
+----
+
+When you're ready, push it to Docker Hub:
+[source,console]
+----
+docker push <your_username>/apm-test-app
+----
+
+[float]
+=== Get Elastic deployment details
+
+While configuration options can be set when the Agent is initialized,
+we'll instead use Kubernetes Secrets to store and pass in our APM options.
+The three configuration values we need are:
+
+* `serviceName`
+* `secretToken`
+* `serverUrl`
+
+The `serverUrl` and `secretToken` can be copied from your Hosted Elasticsearch Service deployment.
+Just click "APM", and then copy the values listed under *Server details*.
+
+The `serviceName` can be a name of your choosing.
+
+[float]
+=== Configure Kubernetes
+
+Create a namespace for your application by creating a filed named `namespace.yaml`:
+
+[source,yaml]
+----
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apm-express-demo
+----
+
+[source,console]
+----
+kubectl create -f namespace.yaml
+----
+
+Create files needed for Kubernetes Secrets with the deployment details from the previous step:
+
+[source,console]
+----
+echo -n '<<Secret_token_copied_earlier>>' > ELASTIC_APM_SECRET_TOKEN
+echo -n '<<Server_url_copied_earlier>>' > ELASTIC_APM_SERVER_URL
+echo -n '<<Any_name>>' > ELASTIC_APM_SERVICE_NAME
+----
+
+Then, use the `create secret` command to create the secrets:
+
+[source,console]
+----
+kubectl create secret generic apm-details \
+  --from-file=./ELASTIC_APM_SECRET_TOKEN \
+  --from-file=./ELASTIC_APM_SERVER_URL \
+  --from-file=./ELASTIC_APM_SERVICE_NAME \
+  --namespace=apm-express-demo
+----
+
+[float]
+=== Deploy the application
+
+[source,yaml]
+----
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apm-express-demo-deployment
+  namespace: apm-express-demo
+spec:
+  selector:
+    matchLabels:
+      app: apm-express-demo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: apm-express-demo
+    spec:
+      containers:
+      - name: apm-express-demo
+        image: bmorelli25/node-web-app <1>
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ELASTIC_APM_SECRET_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: apm-details
+              key: ELASTIC_APM_SECRET_TOKEN
+        - name: ELASTIC_APM_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: apm-details
+              key: ELASTIC_APM_SERVER_URL
+        - name: ELASTIC_APM_SERVICE_NAME=
+          valueFrom:
+            secretKeyRef:
+              name: apm-details
+              key: ELASTIC_APM_SERVICE_NAME
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apm-express-demo-deployment
+  namespace: apm-express-demo
+spec:
+  type: NodePort
+  selector:
+    app: apm-express-demo
+  ports:
+    - port: 8080
+      nodePort: 30001
+----
+<1> Use the image you pushed to Docker Hub
+
+[source,console]
+----
+kubectl create -f apm-express-demo.yaml
+----
+
+
+
+
+
+
+
+
+[source,]
+----
+kubectl create -f apm-express-demo.yaml
+
+kubectl get pods -n apm-express-demo
+----
+
+You can now generate traffic and view the results in the APM app!
+
+
+
+GET
+kubectl get deployments -n apm-express-demo
+kubectl get services -n apm-express-demo
+DELETE
+kubectl delete deployment apm-express-demo-deployment -n apm-express-demo
+kubectl delete services apm-express-demo-deployment -n apm-express-demo
+
+
+GET PODS
+
+kubectl get pods -n apm-express-demo

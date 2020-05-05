@@ -25,3 +25,5 @@ include::./configuring-ingest.asciidoc[]
 include::./data-ingestion.asciidoc[]
 
 include::./sourcemaps.asciidoc[]
+
+include::./instrument-kubernetes-app.asciidoc[]
