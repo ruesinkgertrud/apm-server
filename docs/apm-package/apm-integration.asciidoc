@@ -68,6 +68,10 @@ Upgrading from prior {agent} versions::
 Due to changing API key permissions, an {agent} enrolled before version 7.12 is not compatible with the APM integration.
 You must enroll a new {agent} to use the integration.
 
+Source maps::
+The APM Server source map upload endpoint is not compatible with {agent}.
+Source maps must be uploaded directly to {es}. See <<apm-integration-sourcemaps>> for more information.
+
 [discrete]
 [[apm-integration-terminology]]
 === Terminology

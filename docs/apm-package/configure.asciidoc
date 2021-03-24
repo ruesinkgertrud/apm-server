@@ -11,6 +11,7 @@ Templates, pipelines, index lifecycle management, etc.,
 cannot be configured with APM Server or Fleet, and must instead be configured in {kib} or with
 {es} APIs.
 
+[discrete]
 [[apm-integration-templates]]
 === Index templates
 
@@ -22,6 +23,7 @@ Search for `apm`.
 
 See {ref}/index-templates.html[index templates] for more information.
 
+[discrete]
 [[apm-integration-pipelines]]
 === Pipelines
 
@@ -33,6 +35,7 @@ Search for `apm`.
 
 See {ref}/ingest.html[ingest node pipelines] for more information.
 
+[discrete]
 [[apm-integration-ilm]]
 === Index lifecycle management (ILM)
 
@@ -46,6 +49,58 @@ Search for `apm`.
 
 See {ref}/getting-started-index-lifecycle-management.html[manage the index lifecycle] for more information.
 
-// to do
-// [[apm-integration-sourcemaps]]
-// === RUM Source maps
+[discrete]
+[[apm-integration-sourcemaps]]
+=== RUM source map upload
+
+Source maps map minified code back to the original source code,
+allowing you to maintain the speed advantage of minified code,
+without losing the ability to quickly and easily debug your application.
+
+Before uploading your source map to {es}, you'll also need:
+
+* Your minified bundle filepath
+* The `service.version` of the instrumented service
+* The `service.name` of the instrumented service
+
+Source maps should be uploaded to the `apm-{version}-sourcemap` index.
+One way to upload a source map, is with the {es} {ref}/docs-index_.html[Index API].
+Here's an example:
+
+["source","console",subs="attributes"]
+----
+POST apm-{version}-sourcemap/_doc/
+{
+  "@timestamp": "2021-03-24T13:16:10", <1>
+  "sourcemap.sourcemap": [ <2>
+    "{\n  \"version\": 3,\n  \"sources\": [ \"test.js\" ],\n  \"names\": [\n  \"playerA\", \"playerB\", \"playerC\", \"playerD\"\n  ],\n  \"mappings\": {\n    \"1\": [\n      \"1 => test.js 1:1 createFunc\", \"5 => test.js 1:7 createFunc\",\n      \"24 => test.js 1:26 createFunc\", \"33 => test.js 1:7 createFunc\",\n      \"49 => test.js 1:26 createFunc\"\n    ]\n  }\n}"
+  ],
+  "sourcemap.service.name": [ <3>
+    "test-service"
+  ],
+  "sourcemap.service.version": [ <4>
+    "1.9"
+  ],
+  "sourcemap.bundle_filepath": [ <5>
+    "http://localhost/app.min.js"
+  ],
+  "processor.name": [ <6>
+    "sourcemap"
+  ]
+}
+----
+<1> A timestamp indicating the upload time of the source map.
+If multiple source maps have been uploaded, the one with the most recent timestamp takes precedence.
+<2> The source map. To be compatible with Elastic APM, source maps must follow the
+https://sourcemaps.info/spec.html[source map revision 3 proposal spec].
+<3> The service name of the instrumented service.
+<4> The service version of the instrumented service.
+<5> The absolute path of the final bundle as used in the web application.
+<6> The `processor.name` field should have a value of `"sourcemap"`.
+
+Source maps are not applied retroactively to trace data. Once a source map has been uploaded,
+APM Server attempts to find the correct source map for each `stack trace frame` in a newly ingested event.
+If a source map is found, the `stack trace frame` attributes `filename`, `function`, `line number`, and `column number` are overwritten,
+and `abs path` is https://golang.org/pkg/path/#Clean[cleaned] to be the shortest path name equivalent to the given path name.
+If multiple source maps are found,
+the one with the latest upload timestamp is used.
